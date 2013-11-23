@@ -1,0 +1,77 @@
+#!/usr/bin/env ruby
+
+require "twtrtool"
+require "thor"
+
+module Twtrtool
+  class CLI < Thor
+    include Thor::Actions
+    
+    desc "auth", "Authenticate with Twitter API"
+    long_desc <<-LONGDESC
+      Authenticate with the Twitter API. Will ask for CONSUMER_KEY, CONSUMER_SECRET, OAUTH_TOKEN and OAUTH_SECRET 
+      and store them in `#{Twtrtool::CONFIG_FILE}`.
+
+      This needs to be run once before any other command can be used.
+
+      If you don't want your credentials to be stored in a file, you can alternately set the following environment variables: 
+      TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET, TWITTER_OAUTH_TOKEN, and TWITTER_OAUTH_TOKEN_SECRET.
+    LONGDESC
+    def auth
+      say "Please have your CONSUMER_KEY, CONSUMER_SECRET, OAUTH_TOKEN and OAUTH_SECRET ready.\n", :yellow
+      print_wrapped %{
+        If you don’t have credentials yet, visit the following URL to register twtrtool with Twitter
+        (don’t forget to set the application type to "Read and Write" after initial registration):
+        https://dev.twitter.com/apps/new
+      }
+      puts
+      consumer_key    = ask("CONSUMER_KEY:")
+      consumer_secret = ask("CONSUMER_SECRET:")
+      oauth_token     = ask("OAUTH_TOKEN:")
+      oauth_secret    = ask("OAUTH_SECRET:")
+      Twtrtool.save_credentials(consumer_key, consumer_secret, oauth_token, oauth_secret)
+      say "Credentials saved to `#{Twtrtool::CONFIG_FILE}`.", :green
+      say "Verifying credentials ...", :yellow
+      if Twtrtool.verify_credentials
+        say "Success! You can now use all twtrtool commands.", :green
+      else
+        say "Error! Please re-run `#{$0} auth` or manually edit `#{Twtrtool::CONFIG_FILE}`.", :red
+      end
+    end
+    
+    desc "create_inverse <listname> [<listname> …]", "Create and/or sync inverse lists for given list(s)"
+    long_desc <<-LONGDESC
+      Create and/or sync inverse lists for given list(s). Inverse lists contain all the people you are 
+      following that are NOT part of the original list. 
+    
+      Inverse lists will be named "<listname>-i". If they do not exist yet, they will be
+      created as private lists.
+    
+      Note that lists can’t have more than 5,000 members.
+    LONGDESC
+    def create_inverse(*list_names)
+      verify!
+      list_names.each do |list_name|
+        say "Creating / syncing inverse list for '#{list_name}':", :yellow
+        inv_list = List.new(list_name, must_exist: true).create_or_sync_inverse_list
+        say " -> done: List '#{inv_list.name}' now has #{inv_list.member_ids.size} members", :green
+      end
+    rescue List::DoesNotExistError => e
+      say " -> ERROR: #{e.message}", :red
+    end
+    
+    private
+    
+    def verify!
+      unless Twtrtool.verify_credentials
+        say "AUTHENTICATION ERROR - please run `#{$0} auth`\n", :red
+        say "Alternately, make sure the following environment variables contain valid credentials:\n"
+        say "  TWITTER_CONSUMER_KEY\n  TWITTER_CONSUMER_SECRET\n  TWITTER_OAUTH_TOKEN\n  TWITTER_OAUTH_TOKEN_SECRET\n\n"
+        exit 1
+      end
+    end
+  end
+end
+
+
+Twtrtool::CLI.start
