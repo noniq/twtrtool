@@ -8,7 +8,7 @@ module Twtrtool
     include Thor::Actions
     
     desc "auth", "Authenticate with Twitter API"
-    long_desc <<-LONGDESC
+    long_desc %{
       Authenticate with the Twitter API. Will ask for CONSUMER_KEY, CONSUMER_SECRET, OAUTH_TOKEN and OAUTH_SECRET 
       and store them in `#{Twtrtool::CONFIG_FILE}`.
 
@@ -16,7 +16,7 @@ module Twtrtool
 
       If you don't want your credentials to be stored in a file, you can alternately set the following environment variables: 
       TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET, TWITTER_OAUTH_TOKEN, and TWITTER_OAUTH_TOKEN_SECRET.
-    LONGDESC
+    }
     def auth
       say "Please have your CONSUMER_KEY, CONSUMER_SECRET, OAUTH_TOKEN and OAUTH_SECRET ready.\n", :yellow
       print_wrapped %{
@@ -40,7 +40,7 @@ module Twtrtool
     end
     
     desc "create_inverse <listname> [<listname> … | --name <name>]", "Create and/or sync inverse lists for given list(s)"
-    long_desc <<-LONGDESC
+    long_desc %{
       Create and/or sync inverse lists for given list(s). Inverse lists contain all the people you are 
       following that are NOT part of the original list. 
 
@@ -50,7 +50,7 @@ module Twtrtool
       Inverse lists that don’t exist yet will be created as private lists.
 
       Note that lists can’t have more than 5,000 members.
-    LONGDESC
+    }
     method_option :name, aliases: "-n" 
     def create_inverse(*list_names)
       verify!
