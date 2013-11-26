@@ -33,8 +33,8 @@ module Twtrtool
       self.class.create_private_list(name)
     end
   
-    def create_or_sync_inverse_list
-      List.new("#{name}-i").tap do |list|
+    def create_or_sync_inverse_list(inverse_name)
+      List.new(inverse_name).tap do |list|
         list.create_as_private_list unless list.exist?
         list.set_members(friend_ids_not_in_this_list)
       end

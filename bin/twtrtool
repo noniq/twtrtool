@@ -39,21 +39,27 @@ module Twtrtool
       end
     end
     
-    desc "create_inverse <listname> [<listname> …]", "Create and/or sync inverse lists for given list(s)"
+    desc "create_inverse <listname> [<listname> … | --name <name>]", "Create and/or sync inverse lists for given list(s)"
     long_desc <<-LONGDESC
       Create and/or sync inverse lists for given list(s). Inverse lists contain all the people you are 
       following that are NOT part of the original list. 
-    
-      Inverse lists will be named "<listname>-i". If they do not exist yet, they will be
-      created as private lists.
-    
+
+      If used for a single list, you can specify the inverse list’s name using --name. Otherwise the inverse list(s) will be
+      named "<listname>-i".
+
+      Inverse lists that don’t exist yet will be created as private lists.
+
       Note that lists can’t have more than 5,000 members.
     LONGDESC
+    method_option :name, aliases: "-n" 
     def create_inverse(*list_names)
       verify!
+      error "--name can only be used with a single list!" if options[:name] && list_names.size > 1
       list_names.each do |list_name|
-        say "Creating / syncing inverse list for '#{list_name}':", :yellow
-        inv_list = List.new(list_name, must_exist: true).create_or_sync_inverse_list
+        inverse_list_name = options[:name] || "#{list_name}-i"
+        say "Creating / syncing inverse list: '#{list_name}' -> '#{inverse_list_name}'", :yellow
+        error "Source list and inverse list must have different names." if inverse_list_name == list_name
+        inv_list = List.new(list_name, must_exist: true).create_or_sync_inverse_list(inverse_list_name)
         say " -> done: List '#{inv_list.name}' now has #{inv_list.member_ids.size} members", :green
       end
     rescue List::DoesNotExistError => e
@@ -69,6 +75,11 @@ module Twtrtool
         say "  TWITTER_CONSUMER_KEY\n  TWITTER_CONSUMER_SECRET\n  TWITTER_OAUTH_TOKEN\n  TWITTER_OAUTH_TOKEN_SECRET\n\n"
         exit 1
       end
+    end
+    
+    def error(message)
+      say "ERROR: #{message}", :red
+      exit 2
     end
   end
 end
