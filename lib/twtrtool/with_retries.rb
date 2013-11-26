@@ -1,7 +1,7 @@
 module Twtrtool
   module WithRetries
-    MAX_RETRIES = 5
-    RETRY_DELAY = 5
+    MAX_RETRIES = 8
+    RETRY_DELAY = 10
   
     def self.included(base)
       base.extend self
